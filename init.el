@@ -7,6 +7,12 @@
 (add-to-list 'package-archives  '("marmalade" . "http://marmalade-repo.org/packages/"))
 (package-initialize)
 
+;;;
+;;;バッファ移動
+;;;Shift + ↓ or → or ← or ↑
+;;;
+(setq windmove-wrap-around t)
+(windmove-default-keybindings)
 
 ;;~/.emacs.d/elispへロードパスを通す 
 (add-to-list 'load-path "~/.emacs.d/elisp/")
@@ -14,11 +20,24 @@
 ;;init.elを再読み込み
 (global-set-key [f12] 'eval-buffer)
 
-;; 初期化
-(package-initialize)
 ;;モードを表示
 (message "%s" major-mode)
 
+;;;
+;;;背景色
+;;;
+(custom-set-faces
+  '(default ((t (:background "#2d3436" :foreground "#55FF55")
+))))
+; '(cursor
+;    ((((class color)
+;      (background dark))
+;      (:background "#00AA00"))
+;    (((class color)
+;      (background light))
+;      (:background "#999999"))
+;      (t ())
+;)))
 
 ;;; キーバインド
 (define-key global-map "\C-h" 'delete-backward-char) ; 削除
@@ -133,15 +152,3 @@
    (object . (:foreground "#026DF7"))
    (package . font-lock-preprocessor-face)
    ))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(ensime-typecheck-interval 2))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
