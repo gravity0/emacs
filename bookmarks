@@ -1,0 +1,10 @@
+;;;; Emacs Bookmark Format Version 1 ;;;;
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("SetQuiz.scala"
+ (filename . "~/www/scala/scala_quiz/quiz/collection/src/main/scala/quiz/SetQuiz.scala")
+ (front-context-string)
+ (rear-context-string . "Set[A] = ???\n\n  ")
+ (position . 78))
+)
