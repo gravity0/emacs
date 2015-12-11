@@ -1,3 +1,7 @@
 
 *.local~
 elpa/*
+.cache/*
+url/*
+eshell
+ensime

@@ -9,89 +9,44 @@
 (add-to-list 'package-archives  '("marmalade" . "http://marmalade-repo.org/packages/"))
 (package-initialize)
 
-;;;
-;;;バッファ移動
-;;;Shift + ↓ or → or ← or ↑
-;;;
-(setq windmove-wrap-around t)
-(windmove-default-keybindings)
+;;;package-installの自動化
+;;;インストールされていないものがインストールされる
+(require 'cl)
 
-;;;
-;;;現在開いているバッファをクリアする
-;;;
-(defun clear-buffer ()
-  "clear current buffer"
-  (interactive)
-  (let ((start (point-min))
-	(end (point-max)))
-    (delete-region start end))
+(defvar installing-package-list
+  '(
+    ;;使用するパッケージ
+    scala-mode2
+    ensime
+    auto-complete
+    ))
 
-;;~/.emacs.d/elispへロードパスを通す 
-(add-to-list 'load-path "~/.emacs.d/elisp/")
-
-(require 'exec-path-from-shell)
-(when (memq window-system '(mac ns))
-    (exec-path-from-shell-initialize))
-
-;;fnキー
-(setq ns-function-modifier 'hyper)
-
-;;コマンドキーをmeta keyとして使用:
-(when (eq system-type 'darwin)
-    (setq ns-command-modifier (quote meta)))
-
-;;init.elを再読み込み
-(global-set-key [f12] 'eval-buffer)
-
-;;モードを表示
-(message "%s" major-mode)
-
-;;;
-;;;背景色
-;;;
-(custom-set-faces
-  '(default ((t (:background "#2d3436" :foreground "#55FF55")
-))))
-
-;;; キーバインド
-(define-key global-map "\C-h" 'delete-backward-char) ; 削除
-(define-key global-map "\M-?" 'help-for-help) ; ヘルプ
-(define-key global-map "\C-\\" nil) ; \C-\の日本語入力の設定を無効にする
-(local-set-key (kbd "TAB") 'tab-to-tab-stop) ;TABキー設定
-
-
-;;; 色を付ける
-(global-font-lock-mode t)
-
-;;; バックアップファイルを作らない
-(setq backup-inhibited t)
-
-;;; スクロールを一行ずつにする
-(setq scroll-step 1)
-
-;;; スクロールバーを右側に表示する
-(set-scroll-bar-mode 'right)
-
-;;; 画面右端で折り返さない
-(setq-default truncate-lines t)
-(setq truncate-partial-width-windows t)
-
-;;; バッファの最後でnewlineで新規行を追加するのを禁止する
-(setq next-line-add-newlines nil)
-
-;;; モードラインに情報を表示
-(display-time)
-(line-number-mode 1)
-(column-number-mode 1)
-
-;;ウィンドウ移動
-(global-set-key (kbd "C-c <left>")  'windmove-left)
-(global-set-key (kbd "C-c <down>")  'windmove-down)
-(global-set-key (kbd "C-c <up>")    'windmove-up)
-(global-set-key (kbd "C-c <right>") 'windmove-right)
+(let ((not-installed (loop for x in installing-package-list
+			   when (not (package-installed-p x))
+			   collect x)))
+  (when not-installed
+    (package-refresh-contents)
+    (dolist (pkg not-installed)
+      (package-install pkg))))
 
 ;;; 現在の関数名をモードラインに表示
 (which-function-mode 1)
+
+(global-set-key (kbd "C-<left>")  'windmove-left)
+(global-set-key (kbd "C-<down>")  'windmove-down)
+(global-set-key (kbd "C-<up>")    'windmove-up)
+(global-set-key (kbd "C-<right>") 'windmove-right)
+
+;; load environment value
+;; eshellとbashで$PATHを共有
+(load-file (expand-file-name "~/.emacs.d/shellenv.el"))
+(dolist (path (reverse (split-string (getenv "PATH") ":")))
+  (add-to-list 'exec-path path))
+
+;; スクリーンの最大化
+;;(set-frame-parameter nil 'fullscreen 'maximized)
+;; フルスクリーン
+(set-frame-parameter nil 'fullscreen 'fullboth)
 
 ;;; タブをスペース4字
 ;(setq-default tab-width 4 indent-tabs-mode nil)
@@ -106,17 +61,16 @@
 ;;
 ;; ensime:scala開発環境
 ;;
-(add-to-list 'load-path (concat user-emacs-directory "~/.emacs.d/elisp/ensime"))
 (require 'ensime)
 (require 'scala-mode2)
-
+(require 'auto-complete)
+;;;(define-key scala-mode-map (kbd ".") 'scala/completing-dot)
 (setenv "PATH" (concat "PATH_TO_SBT:" (getenv "PATH")))
 (setenv "PATH" (concat "PATH_TO_SCALA:" (getenv "PATH")))
 
 (add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
 ;;http://blog.shibayu36.org/entry/2015/07/07/103000
 (setq ensime-completion-style 'auto-complete)
-(define-key scala-mode-map (kbd ".") 'scala/completing-dot)
 
 ;;(defun scala/enable-eldoc ()
 ;;  "Show error message or type name at point by Eldoc."
@@ -127,12 +81,6 @@
 ;;                      (or (and err (not (string= err "")) err)
 ;;                          (ensime-print-type-at-point))))))
 ;;  (eldoc-mode +1))
-
-;;w3m
-(add-to-list 'load-path "~/.emacs.d/elisp/w3m/share/emacs/site-lisp/w3m")
-;(add-to-list 'Info-additional-directory-list "~/.emacs.d/elisp/w3m/share/info")
-(require 'w3m-load)
-(put 'upcase-region 'disabled nil)
 
 ;;;ruby用elisp読み込み
 (add-to-list 'load-path "~/.emacs.d/elisp/ruby")
@@ -166,6 +114,7 @@
     (set-face-foreground font-lock-type-face "LightSeaGreen"))
 )
 
+
 (global-font-lock-mode 1)
 (setq default-frame-alist (append '(
   (foreground-color . "gray")  ;
@@ -191,3 +140,27 @@
             ))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (put 'downcase-region 'disabled nil)
+
+
+;;;
+;;;eww設定
+;;;
+"デフォルトをgoogleへ"
+(setq eww-search-prefix "http://www.google.co.jp/search?q=")
+
+(defvar eww-disable-colorize t)
+(defun shr-colorize-region–disable (orig start end fg &optional bg &rest _)
+(unless eww-disable-colorize
+(funcall orig start end fg)))
+(advice-add 'shr-colorize-region :around 'shr-colorize-region–disable)
+(advice-add 'eww-colorize-region :around 'shr-colorize-region–disable)
+(defun eww-disable-color ()
+"eww で文字色を反映させない"
+(interactive)
+(setq-local eww-disable-colorize t)
+(eww-reload))
+(defun eww-enable-color ()
+"eww で文字色を反映させる"
+(interactive)
+(setq-local eww-disable-colorize nil)
+(eww-reload))
