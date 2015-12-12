@@ -19,6 +19,7 @@
     scala-mode2
     ensime
     auto-complete
+    emms
     ))
 
 (let ((not-installed (loop for x in installing-package-list
@@ -32,10 +33,10 @@
 ;;; 現在の関数名をモードラインに表示
 (which-function-mode 1)
 
-(global-set-key (kbd "C-<left>")  'windmove-left)
-(global-set-key (kbd "C-<down>")  'windmove-down)
-(global-set-key (kbd "C-<up>")    'windmove-up)
-(global-set-key (kbd "C-<right>") 'windmove-right)
+(global-set-key (kbd "C-c <left>")  'windmove-left)
+(global-set-key (kbd "C-c <down>")  'windmove-down)
+(global-set-key (kbd "C-c <up>")    'windmove-up)
+(global-set-key (kbd "C-c <right>") 'windmove-right)
 
 ;; load environment value
 ;; eshellとbashで$PATHを共有
@@ -68,9 +69,59 @@
 (setenv "PATH" (concat "PATH_TO_SBT:" (getenv "PATH")))
 (setenv "PATH" (concat "PATH_TO_SCALA:" (getenv "PATH")))
 
-(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
 ;;http://blog.shibayu36.org/entry/2015/07/07/103000
 (setq ensime-completion-style 'auto-complete)
+(defun scala/enable-eldoc ()
+  "Show error message or type name at point by Eldoc."
+  (setq-local eldoc-documentation-function
+              #'(lambda ()
+                  (when (ensime-connected-p)
+                    (let ((err (ensime-print-errors-at-point)))
+                      (or (and err (not (string= err "")) err)
+                          (ensime-print-type-at-point))))))
+  (eldoc-mode +1))
+
+(defun scala/completing-dot-company ()
+  (cond (company-backend
+         (company-complete-selection)
+         (scala/completing-dot))
+        (t
+         (insert ".")
+         (company-complete))))
+
+(defun scala/completing-dot-ac ()
+  (insert ".")
+  (ac-trigger-key-command t))
+
+;; Interactive commands
+
+(defun scala/completing-dot ()
+  "Insert a period and show company completions."
+  (interactive "*")
+  (eval-and-compile (require 'ensime))
+  (eval-and-compile (require 's))
+  (when (s-matches? (rx (+ (not space)))
+                    (buffer-substring (line-beginning-position) (point)))
+    (delete-horizontal-space t))
+  (cond ((not (and (ensime-connected-p) ensime-completion-style))
+         (insert "."))
+        ((eq ensime-completion-style 'company)
+         (scala/completing-dot-company))
+        ((eq ensime-completion-style 'auto-complete)
+         (scala/completing-dot-ac))))
+
+;; Initialization
+(add-hook 'ensime-mode-hook #'scala/enable-eldoc)
+(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
+(add-hook 'scala-mode-hook 'flycheck-mode)
+(add-hook 'scala-mode-hook
+          '(lambda ()
+             (progn
+               (local-set-key (kbd "C-x C-j") 'open-by-intellij))))
+
+(define-key scala-mode-map (kbd ".") 'scala/completing-dot)
+;;/scala設定================================================================
+
 
 ;;(defun scala/enable-eldoc ()
 ;;  "Show error message or type name at point by Eldoc."
@@ -164,3 +215,13 @@
 (interactive)
 (setq-local eww-disable-colorize nil)
 (eww-reload))
+
+;;;
+;;;emms
+;;;
+(require 'emms-setup)
+(require 'emms-i18n)
+(emms-standard)
+(emms-default-players)
+(setq emms-player-list '(emms-player-mplayer))
+(setq emms-source-file-default-directory "~/music/")
