@@ -1,5 +1,8 @@
-(setq debug-on-error t)
 
+
+(setq debug-on-error t)
+;;画面から溢れたら、開業する(t)設定。開業しない場合は（nil）
+(setq truncate-lines t)
 (require 'package)
 ;;MELPAを追加
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
@@ -20,7 +23,17 @@
     ensime
     auto-complete
     emms
+    sql
+    sql-indent
+    vline
+    column-marker
+    col-highlight
+    crosshairs
+    hl-line+
     ))
+
+;;; M-x eval-bufferをf12へ割当
+(global-set-key [f12] 'eval-buffer)
 
 (let ((not-installed (loop for x in installing-package-list
 			   when (not (package-installed-p x))
@@ -37,6 +50,8 @@
 (global-set-key (kbd "C-c <down>")  'windmove-down)
 (global-set-key (kbd "C-c <up>")    'windmove-up)
 (global-set-key (kbd "C-c <right>") 'windmove-right)
+
+(define-key global-map [?¥] [?\\])  ;; ¥の代わりにバックスラッシュを入力する
 
 ;; load environment value
 ;; eshellとbashで$PATHを共有
@@ -58,6 +73,33 @@
 ;(require 'color-theme)
 ;(color-theme-initialize)
 ;(color-theme-euphoria) 
+
+
+(require 'col-highlight)
+;; 常にハイライト
+;; (column-highlight-mode 1)
+;; 動作のないときにハイライト(秒数を指定)
+(toggle-highlight-column-when-idle 1)
+(col-highlight-set-interval 3)
+;; col-highlightの色を変える
+(custom-set-faces
+ '(col-highlight((t (:background "#505050")))))
+(column-highlight-mode 1)
+;;現在行と行をハイライトする
+(require 'crosshairs)
+(setq my-highlight-color "#500050")
+(set-face-background 'hl-line my-highlight-color)
+(crosshairs-mode 1)
+
+
+
+
+
+
+
+
+
+
 
 ;;
 ;; ensime:scala開発環境
@@ -225,3 +267,28 @@
 (emms-default-players)
 (setq emms-player-list '(emms-player-mplayer))
 (setq emms-source-file-default-directory "~/music/")
+
+
+;;=======================================================
+;;SQL
+;;======================================================
+;; C-c C-c : 'sql-send-paragraph
+;; C-c C-r : 'sql-send-region
+;; C-c C-s : 'sql-send-string
+;; C-c C-b : 'sql-send-buffer
+(require 'sql)
+
+;; starting SQL mode loading sql-indent / sql-complete
+(eval-after-load "sql"
+  '(progn
+     (load-library "sql-indent")))
+
+(setq auto-mode-alist
+      (cons '("\\.sql$" . sql-mode) auto-mode-alist))
+
+(defun sql-mode-hooks()
+  (setq sql-indent-offset 2)
+  (setq indent-tabs-mode nil)
+  (sql-set-product "postgres"))
+
+(add-hook 'sql-mode-hook 'sql-mode-hooks)
