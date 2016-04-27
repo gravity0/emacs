@@ -10,8 +10,13 @@
 (add-to-list 'package-archives '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/") t)
 ;; Marmaladeを追加
 (add-to-list 'package-archives  '("marmalade" . "http://marmalade-repo.org/packages/"))
+;; Orgを追加
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+
 (package-initialize)
 
+;;; ディレクトリツリー M-x dirtree
+(require 'dirtree)
 ;;;package-installの自動化
 ;;;インストールされていないものがインストールされる
 (require 'cl)
@@ -30,6 +35,12 @@
     col-highlight
     crosshairs
     hl-line+
+    dirtree
+    ac-python
+    jedi
+    ctags
+    robe
+    inf-ruby
     ))
 
 ;;; M-x eval-bufferをf12へ割当
@@ -194,19 +205,23 @@
 (autoload 'ruby-mode "ruby-mode" "Mode for editing ruby source files" t)
 (setq auto-mode-alist  (append '(("\\.rb$" . ruby-mode)) auto-mode-alist))
 (setq interpreter-mode-alist (append '(("ruby" . ruby-mode)) interpreter-mode-alist))
-(autoload 'run-ruby "inf-ruby" "Run an inferior Ruby process")
-(autoload 'inf-ruby-keys "inf-ruby" "Set local key defs for inf-ruby in ruby-mode")
 (add-hook 'ruby-mode-hook
   '(lambda ()
     (turn-on-font-lock)
+    (robe-mode)
+    (robe-ac-setup)
     (set-face-foreground font-lock-comment-face "pink")
     (set-face-foreground font-lock-string-face "yellow")
     (set-face-foreground font-lock-function-name-face "grey")
     (set-face-foreground font-lock-variable-name-face "orange")
     (set-face-foreground font-lock-keyword-face "LightSeaGreen")
     (set-face-foreground font-lock-type-face "LightSeaGreen"))
-)
+  )
 
+; robe
+(autoload 'robe-mode "robe" "Code navigation, documentation lookup and completion for Ruby" t nil)
+(autoload 'ac-robe-setup "ac-robe" "auto-complete robe" nil nil)
+(add-hook 'robe-mode-hook 'ac-robe-setup)
 
 (global-font-lock-mode 1)
 (setq default-frame-alist (append '(
@@ -216,6 +231,14 @@
 ) default-frame-alist))
 ;; ruby-mode indent
 (setq ruby-deep-indent-paren-style nil)
+
+
+;;;; for ctags.el
+(require 'ctags nil t)
+(setq tags-revert-without-query t)
+(setq ctags-command "ctags -R --fields=\"+afikKlmnsSzt\" ")
+(global-set-key (kbd "<f5>") 'ctags-create-or-update-tags-table)
+(global-set-key (kbd "M-.") 'ctags-search)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;C 言語・ C++ のための設定.
@@ -292,3 +315,39 @@
   (sql-set-product "postgres"))
 
 (add-hook 'sql-mode-hook 'sql-mode-hooks)
+
+;;=======================================================
+;;Python
+;;======================================================
+
+(add-hook 'python-mode-hook
+	  '(lambda ()
+	     (setq indent-tabs-mode nil)
+	     (setq indent-level 4)
+	     (setq python-indent 
+		   (setq tab-width 4)))
+)	  
+(require 'auto-complete-config)
+(require 'python)
+(require 'jedi)
+(add-hook 'python-mode-hook 'jedi:setup)
+(define-key python-mode-map (kbd "<C-tab>") 'jedi:complete)
+(setq jedi:complete-on-dot t)
+
+(require 'ac-python)
+(add-to-list 'ac-modes 'python-3-mode)
+
+
+(when (load "flymake" t)
+  (defun flymake-pyflakes-init ()
+     ; Make sure it's not a remote buffer or flymake would not work
+     (when (not (subsetp (list (current-buffer)) (tramp-list-remote-buffers)))
+      (let* ((temp-file (flymake-init-create-temp-buffer-copy
+                         'flymake-create-temp-inplace))
+             (local-file (file-relative-name
+                          temp-file
+                          (file-name-directory buffer-file-name))))
+        (list "pyflakes" (list local-file)))))
+  (add-to-list 'flymake-allowed-file-name-masks
+               '("\\.py\\'" flymake-pyflakes-init)))
+
