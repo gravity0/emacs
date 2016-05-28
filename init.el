@@ -5,11 +5,11 @@
 (setq truncate-lines t)
 (require 'package)
 ;;MELPAを追加
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 ;;MELPA Stableを追加
 (add-to-list 'package-archives '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/") t)
 ;; Marmaladeを追加
-(add-to-list 'package-archives  '("marmalade" . "http://marmalade-repo.org/packages/"))
+(add-to-list 'package-archives  '("marmalade" . "http://marmalade-repo.org/packages/") t)
 ;; Orgを追加
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 
@@ -39,9 +39,33 @@
     ac-python
     jedi
     ctags
-    robe
-    inf-ruby
+    web-mode
     ))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; オートコンプリート
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(require 'auto-complete)
+    (require 'auto-complete-config)
+    ;; グローバルでauto-completeを利用
+    (global-auto-complete-mode t)
+    (define-key ac-completing-map (kbd "M-n") 'ac-next)      ; M-nで次候補選択
+    (define-key ac-completing-map (kbd "M-p") 'ac-previous)  ; M-pで前候補選択
+    (setq ac-dwim t)  ; 空気読んでほしい
+    ;; 情報源として
+    ;; * ac-source-filename
+    ;; * ac-source-words-in-same-mode-buffers
+    ;; を利用
+    (setq-default ac-sources '(ac-source-filename ac-source-words-in-same-mode-buffers))
+    ;; また、Emacs Lispモードではac-source-symbolsを追加で利用
+    (add-hook 'emacs-lisp-mode-hook (lambda () (add-to-list 'ac-sources 'ac-source-symbols t)))
+    ;; 以下、自動で補完する人用
+    (setq ac-auto-start 1)
+    ;; 以下、手動で補完する人用
+    (setq ac-auto-start nil)
+    (ac-set-trigger-key "TAB")  ; TABで補完開始(トリガーキー)
+    ;; or
+    (define-key ac-mode-map (kbd "M-TAB") 'auto-complete)  ; M-TABで補完開始
 
 ;;; M-x eval-bufferをf12へ割当
 (global-set-key [f12] 'eval-buffer)
@@ -102,12 +126,24 @@
 (set-face-background 'hl-line my-highlight-color)
 (crosshairs-mode 1)
 
+;;背景黒、フォント青
+(global-font-lock-mode 1)
+(setq default-frame-alist (append '(
+  (foreground-color . "gray")  ;
+  (background-color . "black") ;
+  (cursor-color     . "blue")  ;
+) default-frame-alist))
 
 
 
 
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;HTMLのための設定.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+(setq web-mode-engines-alist
+      '(("template-toolkit" . "\\.html?\\'" )))
 
 
 
@@ -186,19 +222,9 @@
 ;;                          (ensime-print-type-at-point))))))
 ;;  (eldoc-mode +1))
 
-;;;ruby用elisp読み込み
-(add-to-list 'load-path "~/.emacs.d/elisp/ruby")
-;;;
-;;;ruby-block
-;;;
-(require 'ruby-block)
-(ruby-block-mode t)
-(setq ruby-block-highlight-toggle t)
-
-;;; smart-compile
-(require 'smart-compile)
-(global-set-key (kbd "C-x c") 'smart-compile)
-(global-set-key (kbd "C-x C-x") (kbd "C-x c C-m"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;Rubyのxのための設定.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;ruby-mode
@@ -208,8 +234,6 @@
 (add-hook 'ruby-mode-hook
   '(lambda ()
     (turn-on-font-lock)
-    (robe-mode)
-    (robe-ac-setup)
     (set-face-foreground font-lock-comment-face "pink")
     (set-face-foreground font-lock-string-face "yellow")
     (set-face-foreground font-lock-function-name-face "grey")
@@ -218,19 +242,12 @@
     (set-face-foreground font-lock-type-face "LightSeaGreen"))
   )
 
-; robe
-(autoload 'robe-mode "robe" "Code navigation, documentation lookup and completion for Ruby" t nil)
-(autoload 'ac-robe-setup "ac-robe" "auto-complete robe" nil nil)
-(add-hook 'robe-mode-hook 'ac-robe-setup)
-
-(global-font-lock-mode 1)
-(setq default-frame-alist (append '(
-  (foreground-color . "gray")  ;
-  (background-color . "black") ;
-  (cursor-color     . "blue")  ;
-) default-frame-alist))
-;; ruby-mode indent
-(setq ruby-deep-indent-paren-style nil)
+;; Ruby mode configurations
+(add-to-list 'auto-mode-alist '("\\.rake$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("Gemfile$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("Rakefile$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("gemspec$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("config.ru$" . ruby-mode))
 
 
 ;;;; for ctags.el
